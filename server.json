@@ -1,0 +1,582 @@
+{
+  "forms": {},
+  "pages": [
+    "/",
+    "/login",
+    "/register"
+  ],
+  "rules": {
+    "maxFields": 30,
+    "maxLabel": 100,
+    "maxValue": 5000,
+    "maxTotal": 20000,
+    "maxBody": 65536,
+    "messagesPerMinute": 5,
+    "viewsPerMinute": 60,
+    "interactionsPerMinute": 300,
+    "maxEvents": 50,
+    "membersPerMinute": 10,
+    "keepMessages": 2000,
+    "maxPage": 300,
+    "maxRecords": 2000,
+    "recordWritesPerMinute": 20,
+    "maxRecordValue": 5000
+  },
+  "messages": {
+    "unreadable": "The message could not be read.",
+    "unknownForm": "This form doesn’t send messages here.",
+    "tooManyFields": "The message has more fields than the form.",
+    "empty": "Fill in the form first.",
+    "tooLong": "The message is too long.",
+    "tooMany": "Too many messages. Try again in a minute.",
+    "unauthorized": "Send the admin key as \"Authorization: Bearer <key>\".",
+    "memberWrong": "The email or password is wrong.",
+    "memberPending": "Your account is waiting for the site owner to let you in.",
+    "memberExists": "There is already an account with this email: sign in instead.",
+    "memberClosed": "This site isn’t taking new members.",
+    "memberPassword": "Use a password of at least 8 characters.",
+    "memberEmail": "Enter a valid email address.",
+    "memberWelcome": "Welcome! You are signed in.",
+    "memberWaiting": "Thanks! The site owner will let you in soon.",
+    "memberSignedIn": "Signed in.",
+    "memberSignedOut": "Signed out.",
+    "memberNotSignedIn": "Not signed in.",
+    "memberTooMany": "Too many tries. Wait a few minutes and try again.",
+    "recordSignIn": "Sign in first.",
+    "recordUnreadable": "The record could not be read.",
+    "recordShape": "Send the record as { values: { field: value } }.",
+    "recordUnknownField": "\"{field}\" isn't a field of {name}.",
+    "recordSingle": "\"{field}\" must be a single value.",
+    "recordLong": "\"{field}\" is too long.",
+    "recordText": "\"{field}\" must be text",
+    "recordNotFound": "Record not found.",
+    "recordNotOwn": "Only the member who added this record can change it.",
+    "recordTooMany": "Too many changes. Wait a minute and try again.",
+    "recordNoCollection": "There is no such collection.",
+    "notFound": "Not found"
+  },
+  "botPattern": "bot|crawl|spider|slurp|headless|lighthouse|preview|monitor|fetch|scan|curl|wget|python|java/|go-http|facebookexternalhit",
+  "embedCsp": "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox",
+  "database": "postgres",
+  "platform": {
+    "url": "https://universalide.onrender.com"
+  },
+  "tracking": {
+    "heatCells": 20,
+    "pages": {
+      "/": {
+        "sections": 4,
+        "forms": [
+          0,
+          2
+        ],
+        "labels": [
+          "Add Goal",
+          "GoalSetter",
+          "Login",
+          "Logout",
+          "Register",
+          "X"
+        ],
+        "outHosts": []
+      },
+      "/login": {
+        "sections": 3,
+        "forms": [
+          0,
+          2
+        ],
+        "labels": [
+          "GoalSetter",
+          "Login",
+          "Logout",
+          "Register",
+          "Submit"
+        ],
+        "outHosts": []
+      },
+      "/register": {
+        "sections": 3,
+        "forms": [
+          0,
+          2
+        ],
+        "labels": [
+          "GoalSetter",
+          "Login",
+          "Logout",
+          "Register",
+          "Submit"
+        ],
+        "outHosts": []
+      }
+    }
+  },
+  "members": {
+    "signup": "open",
+    "pages": {},
+    "signin": "/login"
+  },
+  "records": {
+    "goals": {
+      "name": "Goals",
+      "readers": "anyone",
+      "full": "Goals is full: it keeps up to 2000 records.",
+      "fields": [
+        {
+          "name": "user",
+          "read": "string",
+          "required": true,
+          "max": 300,
+          "requiredText": "\"user\" is required",
+          "problem": "\"user\" must be at most 300 characters (use a long text field)"
+        },
+        {
+          "name": "text",
+          "read": "text",
+          "required": true,
+          "requiredText": "\"text\" is required",
+          "problem": "\"text\" must be text"
+        }
+      ],
+      "endpointsOnly": true
+    }
+  },
+  "logic": [
+    {
+      "id": "get-goals",
+      "auth": "member",
+      "note": "GET /api/goals in the original (backend/controllers/goalController.js:9)",
+      "path": "/goals",
+      "input": {},
+      "steps": [
+        {
+          "as": "goalsFound",
+          "do": "find",
+          "where": {
+            "$eq": [
+              "$record.user",
+              {
+                "$text": "$member.id"
+              }
+            ]
+          },
+          "collection": "goals"
+        },
+        {
+          "do": "return",
+          "body": {
+            "$map": [
+              "$goalsFound",
+              {
+                "__v": 0,
+                "_id": "$item.id",
+                "text": "$item.text",
+                "user": "$item.user",
+                "createdAt": "$item.createdAt",
+                "updatedAt": "$item.updatedAt"
+              }
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "method": "GET"
+    },
+    {
+      "id": "set-goal",
+      "auth": "member",
+      "note": "POST /api/goals in the original (backend/controllers/goalController.js:18)",
+      "path": "/goals",
+      "input": {
+        "text": {
+          "max": 5000,
+          "type": "text"
+        }
+      },
+      "steps": [
+        {
+          "do": "if",
+          "that": {
+            "$not": "$input.text"
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "Please add a text field"
+              },
+              "status": 400
+            }
+          ]
+        },
+        {
+          "as": "goal",
+          "do": "create",
+          "values": {
+            "text": "$input.text",
+            "user": {
+              "$text": "$member.id"
+            }
+          },
+          "collection": "goals"
+        },
+        {
+          "do": "return",
+          "body": {
+            "$if": [
+              "$goal",
+              {
+                "__v": 0,
+                "_id": "$goal.id",
+                "text": "$goal.text",
+                "user": "$goal.user",
+                "createdAt": "$goal.createdAt",
+                "updatedAt": "$goal.updatedAt"
+              },
+              null
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "method": "POST"
+    },
+    {
+      "id": "delete-goal",
+      "auth": "member",
+      "note": "DELETE /api/goals/:id in the original (backend/controllers/goalController.js:65)",
+      "path": "/goals/:id",
+      "input": {},
+      "steps": [
+        {
+          "as": "goalFound",
+          "do": "find",
+          "limit": 1,
+          "where": {
+            "$eq": [
+              "$record.id",
+              {
+                "$text": "$params.id"
+              }
+            ]
+          },
+          "collection": "goals"
+        },
+        {
+          "as": "goal",
+          "do": "set",
+          "value": {
+            "$first": "$goalFound"
+          }
+        },
+        {
+          "do": "if",
+          "that": {
+            "$not": {
+              "$if": [
+                "$goal",
+                {
+                  "__v": 0,
+                  "_id": "$goal.id",
+                  "text": "$goal.text",
+                  "user": "$goal.user",
+                  "createdAt": "$goal.createdAt",
+                  "updatedAt": "$goal.updatedAt"
+                },
+                null
+              ]
+            }
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "Goal not found"
+              },
+              "status": 400
+            }
+          ]
+        },
+        {
+          "do": "if",
+          "that": {
+            "$not": {
+              "_id": {
+                "$text": "$member.id"
+              },
+              "name": "$member.name",
+              "email": "$member.email"
+            }
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "User not found"
+              },
+              "status": 401
+            }
+          ]
+        },
+        {
+          "do": "if",
+          "that": {
+            "$ne": [
+              {
+                "$text": "$goal.user"
+              },
+              {
+                "$text": "$member.id"
+              }
+            ]
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "User not authorized"
+              },
+              "status": 401
+            }
+          ]
+        },
+        {
+          "do": "delete",
+          "id": "$goal.id",
+          "collection": "goals"
+        },
+        {
+          "do": "return",
+          "body": {
+            "id": "$params.id"
+          },
+          "status": 200
+        }
+      ],
+      "method": "DELETE"
+    },
+    {
+      "id": "update-goal",
+      "auth": "member",
+      "note": "PUT /api/goals/:id in the original (backend/controllers/goalController.js:35)",
+      "path": "/goals/:id",
+      "input": {
+        "text": {
+          "max": 5000,
+          "type": "text"
+        },
+        "user": {
+          "max": 2000,
+          "type": "string"
+        }
+      },
+      "steps": [
+        {
+          "as": "goalFound",
+          "do": "find",
+          "limit": 1,
+          "where": {
+            "$eq": [
+              "$record.id",
+              {
+                "$text": "$params.id"
+              }
+            ]
+          },
+          "collection": "goals"
+        },
+        {
+          "as": "goal",
+          "do": "set",
+          "value": {
+            "$first": "$goalFound"
+          }
+        },
+        {
+          "do": "if",
+          "that": {
+            "$not": {
+              "$if": [
+                "$goal",
+                {
+                  "__v": 0,
+                  "_id": "$goal.id",
+                  "text": "$goal.text",
+                  "user": "$goal.user",
+                  "createdAt": "$goal.createdAt",
+                  "updatedAt": "$goal.updatedAt"
+                },
+                null
+              ]
+            }
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "Goal not found"
+              },
+              "status": 400
+            }
+          ]
+        },
+        {
+          "do": "if",
+          "that": {
+            "$not": {
+              "_id": {
+                "$text": "$member.id"
+              },
+              "name": "$member.name",
+              "email": "$member.email"
+            }
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "User not found"
+              },
+              "status": 401
+            }
+          ]
+        },
+        {
+          "do": "if",
+          "that": {
+            "$ne": [
+              {
+                "$text": "$goal.user"
+              },
+              {
+                "$text": "$member.id"
+              }
+            ]
+          },
+          "then": [
+            {
+              "do": "return",
+              "body": {
+                "stack": null,
+                "message": "User not authorized"
+              },
+              "status": 401
+            }
+          ]
+        },
+        {
+          "as": "updatedGoalFound",
+          "do": "find",
+          "limit": 1,
+          "where": {
+            "$eq": [
+              "$record.id",
+              {
+                "$text": "$params.id"
+              }
+            ]
+          },
+          "collection": "goals"
+        },
+        {
+          "as": "updatedGoalOld",
+          "do": "set",
+          "value": {
+            "$first": "$updatedGoalFound"
+          }
+        },
+        {
+          "do": "if",
+          "else": [
+            {
+              "as": "updatedGoal",
+              "do": "set",
+              "value": null
+            }
+          ],
+          "that": "$updatedGoalOld",
+          "then": [
+            {
+              "as": "updatedGoalUpdated",
+              "do": "update",
+              "id": "$updatedGoalOld.id",
+              "values": {
+                "text": {
+                  "$if": [
+                    {
+                      "$exists": "$input.text"
+                    },
+                    "$input.text",
+                    "$updatedGoalOld.text"
+                  ]
+                },
+                "user": {
+                  "$if": [
+                    {
+                      "$exists": "$input.user"
+                    },
+                    "$input.user",
+                    "$updatedGoalOld.user"
+                  ]
+                }
+              },
+              "collection": "goals"
+            },
+            {
+              "as": "updatedGoal",
+              "do": "set",
+              "value": "$updatedGoalUpdated"
+            }
+          ]
+        },
+        {
+          "do": "return",
+          "body": {
+            "$if": [
+              "$updatedGoal",
+              {
+                "__v": 0,
+                "_id": "$updatedGoal.id",
+                "text": "$updatedGoal.text",
+                "user": "$updatedGoal.user",
+                "createdAt": "$updatedGoal.createdAt",
+                "updatedAt": "$updatedGoal.updatedAt"
+              },
+              null
+            ]
+          },
+          "status": 200
+        }
+      ],
+      "method": "PUT"
+    },
+    {
+      "id": "get-me",
+      "auth": "member",
+      "note": "GET /api/users/me in the original (backend/controllers/userController.js:74)",
+      "path": "/users/me",
+      "input": {},
+      "steps": [
+        {
+          "do": "return",
+          "body": {
+            "_id": {
+              "$text": "$member.id"
+            },
+            "name": "$member.name",
+            "email": "$member.email"
+          },
+          "status": 200
+        }
+      ],
+      "method": "GET"
+    }
+  ]
+}

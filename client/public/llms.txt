@@ -1,0 +1,7 @@
+# Welcome
+
+## Pages
+
+- [Welcome](/)
+- [Login](/login/)
+- [Register](/register/)

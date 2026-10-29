@@ -1,0 +1,51 @@
+{
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff"
+      },
+      "continue": true
+    },
+    {
+      "src": "^/_embeds/(.*)$",
+      "headers": {
+        "Content-Security-Policy": "sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox"
+      },
+      "continue": true
+    },
+    {
+      "src": "^/api/(.*)$",
+      "dest": "${BACKEND_URL}/api/$1",
+      "env": [
+        "BACKEND_URL"
+      ]
+    },
+    {
+      "src": "^/login$",
+      "status": 308,
+      "headers": {
+        "Location": "/login/"
+      }
+    },
+    {
+      "src": "^/register$",
+      "status": 308,
+      "headers": {
+        "Location": "/register/"
+      }
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "status": 404,
+      "dest": "/404.html"
+    }
+  ]
+}
